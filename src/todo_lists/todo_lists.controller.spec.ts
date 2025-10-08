@@ -13,9 +13,11 @@ describe('TodoListsController', () => {
   beforeEach(async () => {
     todoListRepositoryMock = {
       find: jest.fn(),
+      findOne: jest.fn(),
       findOneBy: jest.fn(),
       save: jest.fn(),
       delete: jest.fn(),
+      softRemove: jest.fn(),
       create: jest.fn(),
     };
 
@@ -97,10 +99,28 @@ describe('TodoListsController', () => {
   });
 
   describe('delete', () => {
-    it('should delete a todo list', async () => {
-      todoListRepositoryMock.delete.mockResolvedValue({ affected: 1 });
-      await todoListsController.delete({ todoListId: 1 });
-      expect(todoListRepositoryMock.delete).toHaveBeenCalledWith(1);
+    it('should soft delete a todo list', async () => {
+      const todoListId = 1;
+      const mockTodoList = {
+        id: todoListId,
+        name: 'Shopping List',
+        deleted_at: null,
+        todoItems: [],
+      };
+
+      todoListRepositoryMock.findOne.mockResolvedValue(mockTodoList);
+      todoListRepositoryMock.softRemove.mockResolvedValue(mockTodoList);
+
+      await todoListsController.delete({ todoListId });
+
+      expect(todoListRepositoryMock.findOne).toHaveBeenCalledWith({
+        where: { id: todoListId },
+        relations: ['todoItems'],
+      });
+      expect(todoListRepositoryMock.softRemove).toHaveBeenCalledWith(
+        mockTodoList,
+      );
+      expect(todoListRepositoryMock.softRemove).toHaveBeenCalledTimes(1);
     });
   });
 });

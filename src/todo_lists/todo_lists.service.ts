@@ -30,6 +30,15 @@ export class TodoListsService {
   }
 
   async delete(id: number): Promise<void> {
-    await this.todoListRepository.delete(id);
+    const todoList = await this.todoListRepository.findOne({
+      where: { id },
+      relations: ['todoItems'],
+    });
+
+    if (!todoList) {
+      throw new Error('TodoList not found');
+    }
+
+    await this.todoListRepository.softRemove(todoList);
   }
 }
